@@ -1,0 +1,10 @@
+librosa==1.0.0
+matplotlib==3.11.2
+matplotlib-inline==0.1.7
+numpy==2.5.3
+pydub==0.25.1
+scikit-image==0.26.0
+scikit-learn==1.9.0
+scipy==1.17.1
+soundfile==0.13.1
+tqdm==4.68.1

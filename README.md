@@ -54,9 +54,9 @@ Import query files
     ├── fingerprint_build.py    # Algorithm for building the fingerprint
 ├── requirements.txt            # Python dependencies for the project
 ├── README.md                   # Instructions
-└── data/                       # Folder for storing audio files 
-    ├── database_recordings/    # Store database audio files
-    └── query_recordings/       # Store query audio files
+└── audio_data/                       # Folder for storing audio files 
+    ├── database/    # Store database audio files
+    └── query/       # Store query audio files
 
 ```
 ## Output files

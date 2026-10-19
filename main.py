@@ -88,9 +88,9 @@ def audioIdentification(query_path,fingerprint_path, output_path):
 
 if __name__ == "__main__":
 
-    database_path = "./data/database_recordings"
+    database_path = "./audio_data/database/"
     fingerprint_path = "./finger_print/"
-    query_path = "./data/query_recordings"
+    query_path = "./audio_data/query/"
     output_path = './output.txt'
     
     # Run program for automatic testing 

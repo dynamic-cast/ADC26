@@ -1,2 +1,5 @@
 .DS_Store
 .idea/*
+
+finger_print/db_audio.pkl
+output.txt

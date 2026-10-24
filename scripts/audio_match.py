@@ -17,24 +17,8 @@ class AudioMatch():
         with open(pkl_files[0], "rb") as f:
             self.master_db = pickle.load(f)
 
-        self.preselect_and_rank(preselect_ratio=PSELECT_RATIO)
-
-    def preselect_and_rank(self, preselect_ratio: float) -> dict:
-        hash_count = {h: len(matches)for h, matches in self.master_db.items()}
-        num_remove_hash = int(len(hash_count) * preselect_ratio)
-
-        # Get top common hashes and delete 
-        if num_remove_hash > 0:
-            top_noisy_items = heapq.nlargest(num_remove_hash, hash_count.items(), key=lambda x: x[1]) 
-
-            for noisy_hash, count in top_noisy_items:
-                del self.master_db[noisy_hash]
-
-        print(f"Pruned the top {num_remove_hash} most common noise hashes.")
-
-        return self.master_db
     
-    def query_match(self, query_fp: dict, max_candidates: int) -> dict:
+    def query_match(self, query_fp: dict) -> dict:
 
         candidate_scores = {}
         raw_align = {}
@@ -63,7 +47,7 @@ class AudioMatch():
 
         # Offeset computation for top candidates
         for q_fname, scores in candidate_scores.items():
-            top_db_candidates = heapq.nlargest(max_candidates, scores.keys(), key=lambda x: scores[x])
+            top_db_candidates = heapq.nlargest(3, scores.keys(), key=lambda x: scores[x])
 
             hist = {}
             for db_fname in top_db_candidates:

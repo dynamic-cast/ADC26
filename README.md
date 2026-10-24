@@ -1,14 +1,11 @@
 # Audio Fingerprinting Project
 
-**Note:** This is a refactored version from the April 2025 repo
-
-This project implements an audio fingerprinting system combining the constellation mapping, spectrogram peak extraction, hashing techniques, and pre-selection process for robust audio matching. It aims to identify audio files based on their unique spectral patterns, making it useful for tasks such as audio similarity search.
-
+This project implements an audio fingerprinting system based on Avery Wang's algorithm for Shazam. 
 # Instructions: 
 1. Create a virtual environment and activate
 ```bash
- python3 create venv myvenv
- source myvenv/bin/activate
+ python3 -m venv venv
+ source venv/bin/activate
  ```
 
 2. Install dependencies:
@@ -24,7 +21,7 @@ python3 main.py
 ```
 
 ## Requirements:
-1. Make sure you have Python 3.10+ installed.
+1. Make sure you have Python 3.12+ installed.
 
 
 ## Importing files (Input Files)
@@ -63,5 +60,11 @@ Import query files
 Output files are located in output.txt 
 Example:
 ```bash
-query: classical.00003-snippet-10-10.wav database: classical.00003.wav pop.00003.wav classical.00017.wav
+query: 011298_query.mp3 matches: 011298.mp3, 094468.mp3, 115471_query.mp3
 ```
+
+References:
+[1] Wang, A. (2003). An industrial strength audio search algorithm. In Proceedings of the 4th International Conference on Music Information Retrieval (ISMIR 2003) (pp. 7–13)
+[2] Defferrard, M., Benzi, K., Vandergheynst, P., & Bresson, X. (2017). FMA: A Dataset For Music Analysis [Dataset]. UCI Machine Learning Repository. https://doi.org/10.24432/C5HW28.
+
+

@@ -21,9 +21,9 @@ Published: 2003
 
 def fingerprintBuilder(database_path, fingerprint_path):
 
-    fingerprint_path = Path(fingerprint_path)
+    fingerprint_path = Path(fingerprint_path) / "db_audio.pkl"
 
-    if not os.path.exists(fingerprint_path / "db_audio.pkl"):
+    if not fingerprint_path.exists():
          
         get_audio = AudioExtract(sr=SR_DB, n_fft=N_FFT_DB, hop_length=HOP_LENGTH_DB)
         spectrogram_dict = get_audio.extract_audio_spec(database_path)
@@ -34,7 +34,7 @@ def fingerprintBuilder(database_path, fingerprint_path):
         # print(f"{fname}: {spectrogram}")
 
         for fname, spectrogram in spectrogram_dict.items():
-            f"Processing {fname}"
+            print(f"Processing {fname}")
             fp = FingerPrintBuild(spectrogram)
             peaks = fp.get_salient_peaks(sr=SR_DB, n_fft=N_FFT_DB, hop_length=HOP_LENGTH_DB, target_peak_s=TARGET_PEAKS_DB, window_sec=WINDOW_SEC_DB)
             song_hashes = fp.generate_hash(peaks)
@@ -55,15 +55,15 @@ def fingerprintBuilder(database_path, fingerprint_path):
 
 def audioIdentification(query_path,fingerprint_path, output_path):
 
-    get_audio = AudioExtract(sr=TARGET_SR, n_fft=N_FFT_Q, hop_length=HOP_LENGTH_Q)
+    get_audio = AudioExtract(sr=SR_Q, n_fft=N_FFT_Q, hop_length=HOP_LENGTH_Q)
     spectrograms = get_audio.extract_audio_spec(query_path)
 
     fingerprint_queries = {}
 
     for fname, spectrogram in spectrograms.items():
-            f"Processing {fname}"
+            print(f"Processing {fname}")
             fp = FingerPrintBuild(spectrogram)
-            peaks = fp.get_salient_peaks(sr=TARGET_SR, n_fft=N_FFT_Q, hop_length=HOP_LENGTH_Q, target_peak_s=TARGET_PEAKS_Q, window_sec=1)
+            peaks = fp.get_salient_peaks(sr=SR_Q, n_fft=N_FFT_Q, hop_length=HOP_LENGTH_Q, target_peak_s=TARGET_PEAKS_Q, window_sec=1)
             song_hashes = fp.generate_hash(peaks)
     
             for hash_val, t_anchor in song_hashes:
@@ -76,7 +76,7 @@ def audioIdentification(query_path,fingerprint_path, output_path):
     match = AudioMatch(fingerprint_path)
 
     # Get top 3 matches
-    matched_songs = match.query_match(fingerprint_queries, max_candidates=MAX_DB_MATCHES)
+    matched_songs = match.query_match(fingerprint_queries)
 
     with open(output_path, "w") as f:
         for song, top_songs in matched_songs.items(): 

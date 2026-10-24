@@ -1,5 +1,5 @@
 .DS_Store
 .idea/*
-
+venv
 finger_print/db_audio.pkl
 output.txt

@@ -5,13 +5,6 @@ from scripts.config import *
 from scripts.audio_match import *
 
 """
-EC7006 CW2: Audio Identification
-
-Reference paper: ROBUST FREQUENCY-BASED AUDIO FINGERPRINTING
-Elsa Dupraz and Gael Richard 
-Published: 2010
-
-and 
 An Industrial-Strength Audio Search Algorithm
 Avery Li-Chun Wang
 Published: 2003
@@ -29,10 +22,7 @@ def fingerprintBuilder(database_path, fingerprint_path):
         spectrogram_dict = get_audio.extract_audio_spec(database_path)
 
         db_fingerprints_dict = {}
-
-        # fname, spectrogram = spectrogram_dict
-        # print(f"{fname}: {spectrogram}")
-
+        
         for fname, spectrogram in spectrogram_dict.items():
             print(f"Processing {fname}")
             fp = FingerPrintBuild(spectrogram)

@@ -1,92 +1,90 @@
+import numpy as np
+import glob
 import pickle
 from pathlib import Path
-from scripts.fingerprint_build import *
-from scripts.config import *
-from scripts.audio_match import *
+from utils import to_spectrogram, constellation, generate_hashes, find_matches, time_diff_histogram, score_and_align
+                    
 
 """
+Reference: 
 An Industrial-Strength Audio Search Algorithm
 Avery Li-Chun Wang
 Published: 2003
 
 """
 
-
-def fingerprintBuilder(database_path, fingerprint_path):
-
-    fingerprint_path = Path(fingerprint_path) / "db_audio.pkl"
-
-    if not fingerprint_path.exists():
-         
-        get_audio = AudioExtract(sr=SR_DB, n_fft=N_FFT_DB, hop_length=HOP_LENGTH_DB)
-        spectrogram_dict = get_audio.extract_audio_spec(database_path)
-
-        db_fingerprints_dict = {}
-        
-        for fname, spectrogram in spectrogram_dict.items():
-            print(f"Processing {fname}")
-            fp = FingerPrintBuild(spectrogram)
-            peaks = fp.get_salient_peaks(sr=SR_DB, n_fft=N_FFT_DB, hop_length=HOP_LENGTH_DB, target_peak_s=TARGET_PEAKS_DB, window_sec=WINDOW_SEC_DB)
-            song_hashes = fp.generate_hash(peaks)
-
-            for hash_val, t_anchor in song_hashes:
-                if hash_val not in db_fingerprints_dict:
-                    db_fingerprints_dict[hash_val] = []
-
-                db_fingerprints_dict[hash_val].append((fname, t_anchor))
+SR = 44100
+WINDOW_LENGTH = 2048
+N_FFT = 2048
+HOP_LENGTH= 1024
+TOP_N = 5
 
 
-        fp_path = fingerprint_path / "db_audio.pkl"
+def process_file(audio_file):
+    spectrogram = to_spectrogram(audio_file=audio_file, sr=SR, hop_length=HOP_LENGTH,
+                                 window_length=WINDOW_LENGTH, n_fft=N_FFT)
+    # get peaks, constellation, create_fingerprint
+    peaks = constellation(spectrogram)
+    hashes = generate_hashes(peaks)
+    return hashes
 
-        with open(fp_path, "wb") as file:
-            pickle.dump(db_fingerprints_dict, file)
-            print(f"Saved fingerprints to {fp_path}")
+def fingerprints(hashes, song_id, fingerprint_index):
+    for hash_val, t_anchor in hashes:
+        if hash_val not in fingerprint_index:
+            fingerprint_index[hash_val] = []
+        fingerprint_index[hash_val].append((song_id, t_anchor))
+    return fingerprint_index
 
 
-def audioIdentification(query_path,fingerprint_path, output_path):
-
-    get_audio = AudioExtract(sr=SR_Q, n_fft=N_FFT_Q, hop_length=HOP_LENGTH_Q)
-    spectrograms = get_audio.extract_audio_spec(query_path)
-
-    fingerprint_queries = {}
-
-    for fname, spectrogram in spectrograms.items():
-            print(f"Processing {fname}")
-            fp = FingerPrintBuild(spectrogram)
-            peaks = fp.get_salient_peaks(sr=SR_Q, n_fft=N_FFT_Q, hop_length=HOP_LENGTH_Q, target_peak_s=TARGET_PEAKS_Q, window_sec=1)
-            song_hashes = fp.generate_hash(peaks)
-    
-            for hash_val, t_anchor in song_hashes:
-                if hash_val not in fingerprint_queries:
-                    fingerprint_queries[hash_val] = []
-    
-                fingerprint_queries[hash_val].append((fname, t_anchor))
-    
-    
-    match = AudioMatch(fingerprint_path)
-
-    # Get top 3 matches
-    matched_songs = match.query_match(fingerprint_queries)
-
-    with open(output_path, "w") as f:
-        for song, top_songs in matched_songs.items(): 
-            line = f"query: {song}  database: " + " ".join(top_songs) + '\n'
-            # print(line)
-            f.write(line)
-
-        print(f"Results saved in {output_path}")
 
 if __name__ == "__main__":
+    # Process reference audio files
+    reference_audio_dir = Path("./audio_data/database")
+    ref_audio_files = sorted(reference_audio_dir.glob("*.mp3") )
+    reference_fingerprints = Path("./fingerprint/fingerprint.pkl")
 
-    database_path = "./audio_data/database/"
-    fingerprint_path = "./finger_print/"
-    query_path = "./audio_data/query/"
-    output_path = './output.txt'
+    song_names = []
+    # Create a database of reference hashes
+    if not reference_fingerprints.exists():
+        ref_fingerprint_idx = {}
+        for song_id, ref_audio in enumerate(ref_audio_files):
+            print(ref_audio.name)
+            song_names.append(ref_audio.stem)
+            ref_hashes = process_file(ref_audio)
+            fingerprints(ref_hashes, song_id, ref_fingerprint_idx)
+
+
+        reference_fingerprints.parent.mkdir(parents=True, exist_ok=True)
+        with open(reference_fingerprints, "wb") as f:
+            pickle.dump((song_names, dict(ref_fingerprint_idx)), f)
+
+    else:
+        with open(reference_fingerprints, "rb") as f:
+            song_names, ref_fingerprint_idx = pickle.load(f)
+
     
-    # Run program for automatic testing 
-    fingerprintBuilder(database_path = database_path, fingerprint_path = fingerprint_path) 
-    audioIdentification(query_path = query_path,fingerprint_path=fingerprint_path, output_path=output_path)
+    # # Test
+    # print(list(fingerprint_index.items())[:10]) 
+    
+    # Process query audio files
+    query_audio_dir = Path("./audio_data/query")
+    query_audio_files = sorted(query_audio_dir.glob("*.mp3") )
 
-   
+    correct_match = 0
+    for song_id, query_audio in enumerate(query_audio_files):
+        query_hashes = process_file(query_audio)
+        matches = find_matches(query_hashes, ref_fingerprint_idx)
+        counts = time_diff_histogram(matches)
+        rank = score_and_align(counts, top_n=TOP_N)
 
+        print(f"Query song: {query_audio.name}")
+        print("Match:")
+        for i, (ref_id, score, offset) in enumerate(rank, start=1):
+            print(f"  {i}. {song_names[ref_id]}.mp3  (score: {score})")
+        print()
 
+        # Query files are named <reference>_query.mp3, so the filename gives the right answer
+        if rank and song_names[rank[0][0]] == query_audio.stem.replace("_query", ""):
+            correct_match += 1
+
+    print(f"Top-1: {correct_match}/{len(query_audio_files)}")

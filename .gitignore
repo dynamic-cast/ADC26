@@ -1,5 +1,7 @@
 .DS_Store
 .idea/*
 venv
-finger_print/db_audio.pkl
+*.pkl
+*.npz
 output.txt
+__pycache__

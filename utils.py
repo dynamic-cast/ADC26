@@ -1,0 +1,120 @@
+import numpy as np
+import librosa
+from scipy.ndimage import maximum_filter
+from pathlib import Path
+
+
+FAN_OUT = 10
+THRESHOLD = 0.01
+MIN_TIME_DELTA = 1 # skip peaks in the same frame
+MAX_TIME_DELTA = 120
+
+
+def to_spectrogram(audio_file, sr, hop_length, window_length, n_fft):
+    """
+    Time-frequency representation
+    Args:
+        audio_file: np.ndarray
+        sr: int
+        hop_length: int
+        window_length: int
+        n_fft = int
+    Returns:    
+        np.ndarray
+    """
+    y, sr = librosa.load(audio_file, sr=sr)
+    stft = librosa.stft(y=y, n_fft=n_fft, hop_length=hop_length, win_length=window_length, window="hann", center=False)
+    spectrogram = librosa.amplitude_to_db((np.abs(stft) + 1e-10)) # Log magnitude
+
+    return spectrogram
+
+
+def constellation(spectrogram):
+    """
+    Extract prominent peaks from spectrogram
+    """
+    local_max = maximum_filter(spectrogram, mode="constant", size=20) # Set 20 as neighbourhood size
+    is_peak = (spectrogram == local_max) & (spectrogram > THRESHOLD)
+    peaks = np.argwhere(is_peak)
+
+    return peaks
+
+
+def generate_hashes(peaks):
+    """
+    Combanatorial Hashing aka peak pairing
+    """
+    peaks = peaks[np.argsort(peaks[:, 1])] # Sort peaks by time
+    
+    hashes = []
+    for i in range(len(peaks)): 
+        f_anchor, t_anchor = peaks[i]
+        pairs_found = 0       
+        
+        # Takes on F that are closest in time to the anchor 
+        for j in range(i + 1, len(peaks)):
+            f_target, t_target = peaks[j]
+            delta_t = t_target - t_anchor 
+
+            if delta_t > MAX_TIME_DELTA:
+                break
+            
+            # Skip peaks that are too close to the anchor
+            if delta_t < MIN_TIME_DELTA:
+                continue
+
+            # create hash: 32 bit unsigned int
+            hash_val = (int(f_anchor & 0x3FFF) << 18) | (int(f_target & 0x3FF) << 8) | int(delta_t & 0xFF)
+            hash_val_32 = np.uint32(hash_val)
+            hashes.append((int(hash_val_32), int(t_anchor)))
+
+            pairs_found += 1
+
+            if pairs_found >= FAN_OUT:
+                break
+    
+    return hashes
+
+
+    
+def find_matches(query_hashes, reference_fingerprints):
+    """
+    Use query to find matches to reference files via reverse index
+    """
+    matches = []
+    for q_hash, query_time in query_hashes:
+        if q_hash in reference_fingerprints:
+            for song_id, ref_time in reference_fingerprints[q_hash]:
+                matches.append((song_id, query_time, ref_time))        
+    return matches
+
+def time_diff_histogram(matches):
+    """
+    Count matches per (song_id, offset). The highest count is the best alignment.
+    """
+    counts = {}
+    for song_id, query_time, ref_time in matches:
+        offset = ref_time - query_time # delta_t
+        key = (song_id, offset)
+        if key not in counts:
+            counts[key] = 0
+        counts[key] += 1
+    return counts
+
+
+
+def score_and_align(counts, top_n):
+    """
+    Rank songs by their best offset count (strongest diagonal).
+    """
+    best = {}
+    for (song_id, offset), count in counts.items():
+        if song_id not in best or count > best[song_id][0]:
+            best[song_id] = (count, offset)
+
+    ranking = []
+    for song_id, (count, offset) in best.items():
+        ranking.append()
+    ranking = [(song_id, count, offset) for song_id, (count, offset) in best.items()]
+    ranking.sort(key=lambda r: r[1], reverse=True)
+    return ranking[:top_n]

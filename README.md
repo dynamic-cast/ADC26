@@ -45,7 +45,7 @@ Input: query: 011298_query.mp3
 Output: (1) 011298.mp3, (2) 094468.mp3, (3) 115471.mp3 (4) 071173.mp3 (5) 133802.mp3
 ```
 
-References:
+References: <br>
 [1] Wang, A. (2003). An industrial strength audio search algorithm. In Proceedings of the 4th International Conference on Music Information Retrieval (ISMIR 2003) (pp. 7–13) <br>
 [2] Defferrard, M., Benzi, K., Vandergheynst, P., & Bresson, X. (2017). FMA: A Dataset For Music Analysis [Dataset]. UCI Machine Learning Repository. https://doi.org/10.24432/C5HW28.
 

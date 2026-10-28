@@ -5,9 +5,9 @@ from pathlib import Path
 
 
 FAN_OUT = 10
-THRESHOLD = 0.01
-MIN_TIME_DELTA = 1 # skip peaks in the same frame
-MAX_TIME_DELTA = 120
+THRESHOLD = -40
+MIN_TIME_DELTA = 1
+MAX_TIME_DELTA = 200
 
 
 def to_spectrogram(audio_file, sr, hop_length, window_length, n_fft):
@@ -94,8 +94,8 @@ def time_diff_histogram(matches):
     """
     counts = {}
     for song_id, query_time, ref_time in matches:
-        offset = ref_time - query_time # delta_t
-        key = (song_id, offset)
+        delta_tk = ref_time - query_time
+        key = (song_id, delta_tk)
         if key not in counts:
             counts[key] = 0
         counts[key] += 1

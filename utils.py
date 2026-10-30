@@ -1,11 +1,9 @@
 import numpy as np
 import librosa
 from scipy.ndimage import maximum_filter
-from pathlib import Path
-
 
 FAN_OUT = 10
-THRESHOLD = -40
+LEVEL_THRESHOLD_DB = 2
 MIN_TIME_DELTA = 1
 MAX_TIME_DELTA = 200
 
@@ -29,12 +27,12 @@ def to_spectrogram(audio_file, sr, hop_length, window_length, n_fft):
     return spectrogram
 
 
-def constellation(spectrogram):
+def constellation(spectrogram, level_threshold=LEVEL_THRESHOLD_DB):
     """
     Extract prominent peaks from spectrogram
     """
     local_max = maximum_filter(spectrogram, mode="constant", size=20) # Set 20 as neighbourhood size
-    is_peak = (spectrogram == local_max) & (spectrogram > THRESHOLD)
+    is_peak = (spectrogram == local_max) & (spectrogram > level_threshold)
     peaks = np.argwhere(is_peak)
 
     return peaks
@@ -112,9 +110,6 @@ def score_and_align(counts, top_n):
         if song_id not in best or count > best[song_id][0]:
             best[song_id] = (count, offset)
 
-    ranking = []
-    for song_id, (count, offset) in best.items():
-        ranking.append()
     ranking = [(song_id, count, offset) for song_id, (count, offset) in best.items()]
     ranking.sort(key=lambda r: r[1], reverse=True)
     return ranking[:top_n]

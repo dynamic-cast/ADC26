@@ -16,7 +16,7 @@ Published: 2003
 SR = 44100
 WINDOW_LENGTH = 2048
 N_FFT = 2048
-HOP_LENGTH= 1024
+HOP_LENGTH = 1024
 TOP_N = 5
 
 
@@ -30,8 +30,6 @@ def process_file(audio_file):
 
 def fingerprints(hashes, song_id, fingerprint_index):
     for hash_val, t_anchor in hashes:
-        if hash_val not in fingerprint_index:
-            fingerprint_index[hash_val] = []
         fingerprint_index[hash_val].append((song_id, t_anchor))
     return fingerprint_index
 

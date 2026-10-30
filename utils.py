@@ -27,12 +27,12 @@ def to_spectrogram(audio_file, sr, hop_length, window_length, n_fft):
     return spectrogram
 
 
-def constellation(spectrogram):
+def constellation(spectrogram, level_threshold=LEVEL_THRESHOLD_DB):
     """
     Extract prominent peaks from spectrogram
     """
     local_max = maximum_filter(spectrogram, mode="constant", size=20) # Set 20 as neighbourhood size
-    is_peak = (spectrogram == local_max) & (spectrogram > LEVEL_THRESHOLD_DB)
+    is_peak = (spectrogram == local_max) & (spectrogram > level_threshold)
     peaks = np.argwhere(is_peak)
 
     return peaks

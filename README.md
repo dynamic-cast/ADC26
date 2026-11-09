@@ -49,6 +49,17 @@ If you have issues installing the modules lined out in the requirements, try to 
 python3 -m pip install --upgrade pip
 ```
 
+**Alternative: using [uv](https://docs.astral.sh/uv/)**
+
+If you have uv installed, you can use these commands instead of the environment and install steps above. They are the same on macOS, Linux and Windows:
+
+```bash
+uv venv --python 3.13
+uv pip install -r requirements.txt
+```
+
+You don't need to activate the environment. Instead, put `uv run` in front of the commands below, for example `uv run python main.py` or `uv run jupyter notebook notebooks/workshop.ipynb`.
+
 3. Run the main script for end to end execution using the following command in the terminal:
 
 ```bash
